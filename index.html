@@ -30,7 +30,7 @@ window.requestAnimFrame = ( function() {
 				window.webkitRequestAnimationFrame ||
 				window.mozRequestAnimationFrame ||
 				function( callback ) {
-					window.setTimeout( callback, 1000 / 60 );
+					window.setTimeout( callback, 10000);
 				};
 })();
 
@@ -56,6 +56,8 @@ var canvas = document.getElementById( 'canvas' ),
 		mx,
 		// mouse y coordinate
 		my;
+
+var player = new MusicPlayer();
 		
 // set canvas dimensions
 canvas.width = cw;
@@ -75,32 +77,48 @@ function calculateDistance( p1x, p1y, p2x, p2y ) {
 	return Math.sqrt( Math.pow( xDistance, 2 ) + Math.pow( yDistance, 2 ) );
 }
 
-function FireworkAudio(){
-	this.isPlaying = false;
+function MusicPlayer(){
 	this.player = document.createElement("AUDIO");
-	this.player.setAttribute("src", "./assert/a.ogg");
+	this.player.setAttribute("src", "./assert/a.wav");
+	//当前播放的是哪个烟花的音效
+	this.currentPlayingFirework = null;
 	// x.setAttribute("controls", "controls");
 	// document.body.appendChild(this.x);
 
 }
 
-FireworkAudio.prototype.play = function(){
-	if(!this.isPlaying){
-		// console.log('play con='+this.player);
-		this.player.play();
-		this.isPlaying = true;
+MusicPlayer.prototype.setFirework = function(firework){
+	this.currentPlayingFirework = firework;
+}
+
+MusicPlayer.prototype.savePlayCurrentTime = function(){
+	if(this.currentPlayingFirework != null){
+		this.currentPlayingFirework.savePlayCurrentTime(this.player.currentTime);
 	}
 }
 
-FireworkAudio.prototype.stop = function(){
+MusicPlayer.prototype.play = function(currentTime,firework){
+	// if(!this.isPlaying){
+		// console.log('play con='+this.player);
+		if(this.currentPlayingFirework === firework){
+			console.log('eq');
+			this.player.play();
+		}else{
+			this.player.currentTime = currentTime;
+			console.log('  t='+this.player.currentTime);
+			this.player.play();
+			console.log('played  t='+this.player.currentTime);
+		}
+		
+	// }
+}
+
+MusicPlayer.prototype.stop = function(){
 	// console.log('stop con='+this.player);
 		this.player.pause();
 }
 
-FireworkAudio.prototype.destory = function(){
-		// document.body.removeChild(this.player);
-		this.player = null;
-}
+
 
 // create firework
 function Firework( sx, sy, tx, ty ) {
@@ -130,13 +148,15 @@ function Firework( sx, sy, tx, ty ) {
 	// circle target indicator radius
 	this.targetRadius = 1;
 
-	//声音播放器
-	this.fireworkAudio = new FireworkAudio();
-
 	// particle collection
 	this.particles = [];
 	//是否爆炸了
 	this.isExplode = false;
+	this.playCurrentTime = 0;
+}
+
+Firework.prototype.savePlayCurrentTime = function(playTime){
+	this.playCurrentTime = playTime;
 }
 
 // create particle group/explosion
@@ -208,13 +228,20 @@ Firework.prototype.update = function(  ) {
 		}
 	}else{
 		this.updateParticles();
+		if(this.isFireworkEnd()){
+			this.playCurrentTime = -1;
+			player.setFirework(null);
+			player.stop();
+		}
 	}
 	
 
-	//播放焰火声音
-	if(this.fireworkAudio != null){
-		this.fireworkAudio.play();
-    }
+	if(this.playCurrentTime >= 0){
+		player.savePlayCurrentTime();
+		player.setFirework(this);
+		console.log('cuti='+this.playCurrentTime+" id="+this.tx);
+		player.play(this.playCurrentTime,this);
+	}
 	
 	
 }
@@ -226,8 +253,7 @@ Firework.prototype.isFireworkEnd = function(){
 }
 
 Firework.prototype.destory = function(){
-	this.fireworkAudio.stop();
-	this.fireworkAudio.destory();
+
 }
 
 // draw firework

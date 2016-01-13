@@ -97,14 +97,16 @@ MusicPlayer.prototype.savePlayCurrentTime = function(){
 	}
 }
 
-MusicPlayer.prototype.play = function(currentTime,firework){
+MusicPlayer.prototype.switchPlayTarget = function(target){
 	// if(!this.isPlaying){
 		// console.log('play con='+this.player);
-		if(this.currentPlayingFirework === firework){
+		if(this.currentPlayingFirework === target){
 			console.log('eq');
-			this.player.play();
+			// this.player.play();
 		}else{
-			this.player.currentTime = currentTime;
+			this.savePlayCurrentTime();
+			this.player.currentTime = target.playCurrentTime;
+			this.currentPlayingFirework = target;
 			console.log('  t='+this.player.currentTime);
 			this.player.play();
 			console.log('played  t='+this.player.currentTime);
@@ -237,10 +239,8 @@ Firework.prototype.update = function(  ) {
 	
 
 	if(this.playCurrentTime >= 0){
-		player.savePlayCurrentTime();
-		player.setFirework(this);
 		console.log('cuti='+this.playCurrentTime+" id="+this.tx);
-		player.play(this.playCurrentTime,this);
+		player.switchPlayTarget(this);
 	}
 	
 	
